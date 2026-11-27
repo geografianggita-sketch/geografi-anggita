@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asesmen Geografi SMA - Dasar Peta & Skala</title>
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #3b82f6;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --success: #16a34a;
+            --danger: #dc2626;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 850px; margin: 0 auto; background: var(--card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        header { text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 25px; }
+        header h1 { color: var(--primary); margin: 0 0 8px 0; font-size: 24px; }
+        header p { margin: 0; color: #64748b; font-size: 15px; }
+        
+        .identitas { background: #eff6ff; padding: 20px; border-radius: 8px; border-left: 5px solid var(--primary); margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .identitas div { display: flex; flex-direction: column; }
+        .identitas label { font-weight: 600; font-size: 14px; margin-bottom: 5px; color: var(--primary); }
+        .identitas input, .identitas select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; }
+        
+        .soal-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: 0.2s; }
+        .soal-card:hover { border-color: var(--secondary); }
+        .soal-teks { font-weight: 600; font-size: 16px; margin-bottom: 15px; }
+        .opsi-group { display: flex; gap: 15px; }
+        .opsi-btn { flex: 1; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; background: #fff; cursor: pointer; font-weight: 600; font-size: 15px; text-align: center; transition: 0.2s; }
+        .opsi-btn:hover { background: #f8fafc; }
+        .opsi-btn.selected { border-color: var(--primary); background: #dbeafe; color: var(--primary); }
+        
+        .penjelasan { display: none; margin-top: 15px; padding: 15px; border-radius: 6px; font-size: 14px; }
+        .penjelasan.benar { background: #dcfce7; border-left: 4px solid var(--success); color: #14532d; }
+        .penjelasan.salah { background: #fee2e2; border-left: 4px solid var(--danger); color: #7f1d1d; }
+        
+        .btn-submit { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 17px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn-submit:hover { background: #1e3a8a; }
+        .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+        
+        #hasil-box { display: none; text-align: center; padding: 25px; background: #f0fdf4; border: 2px solid var(--success); border-radius: 10px; margin-bottom: 25px; }
+        .skor-besar { font-size: 42px; font-weight: 800; color: var(--primary); margin: 10px 0; }
+        .status-kirim { font-size: 14px; font-weight: 600; color: var(--success); }
+        @media (max-width: 600px) { .identitas { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>ASESMEN FORMATIF GEOGRAFI SMA</h1>
+        <p>Materi: Dasar-Dasar Pemetaan & Perhitungan Skala Peta (30 Soal Benar/Salah)</p>
+    </header>
+
+    <div id="hasil-box">
+        <h2>Hasil Asesmen Anda</h2>
+        <div class="skor-besar" id="tampil-skor">0 / 100</div>
+        <p id="tampil-detail"></p>
+        <p class="status-kirim" id="status-email">Sedang mengirim hasil ke email guru...</p>
+    </div>
+
+    <div class="identitas" id="form-identitas">
+        <div>
+            <label for="nama">Nama Lengkap Siswa *</label>
+            <input type="text" id="nama" placeholder="Masukkan nama lengkap..." required>
+        </div>
+        <div>
+            <label for="kelas">Kelas *</label>
+            <input type="text" id="kelas" placeholder="Contoh: X-1 / X IPS 2" required>
+        </div>
+    </div>
+
+    <div id="wadah-soal"></div>
+
+    <button class="btn-submit" id="btn-kirim" onclick="selesaiUjian()">Selesai & Kirim Jawaban</button>
+</div>
+
+<script>
+// GANTI URL DI BAWAH INI DENGAN URL ENDPOINT FORMSPREE ANDA
+const FORMSPREE_ENDPOINT = "GANTI_DENGAN_ENDPOINT_FORMSPREE_ANDA";
+
+const bankSoal = [
+    // BAGIAN 1: DASAR-DASAR PETA (1-15)
+    {
+        q: "1. Peta merupakan gambaran konvensional permukaan bumi pada bidang datar yang diperkecil dengan skala tertentu dan dilengkapi tulisan serta simbol.",
+        a: true,
+        p: "BENAR. Definisi tersebut sesuai dengan kaidah kartografi (ICA) yang memuat unsur bidang datar, skala, simbol, dan informasi pendukung."
+    },
+    {
+        q: "2. Ilmu pengetahuan, seni, dan teknologi yang mempelajari tentang pembuatan peta disebut Geodesi.",
+        a: false,
+        p: "SALAH. Ilmu dan seni pembuatan peta disebut Kartografi, sedangkan Geodesi adalah ilmu tentang pengukuran dan pemetaan bentuk serta ukuran bumi."
+    },
+    {
+        q: "3. Peta Korografi adalah peta yang menggambarkan seluruh atau sebagian permukaan bumi secara umum dengan skala sedang hingga kecil, seperti peta dalam atlas.",
+        a: true,
+        p: "BENAR. Peta korografi menampilkan kenampakan umum (jalan, sungai, batas wilayah, pegunungan) dalam cakupan wilayah yang luas."
+    },
+    {
+        q: "4. Peta Persebaran Penduduk dan Peta Curah Hujan termasuk ke dalam jenis Peta Umum.",
+        a: false,
+        p: "SALAH. Keduanya termasuk Peta Tematik (Peta Khusus) karena hanya menyajikan satu tema atau informasi tertentu saja."
+    },
+    {
+        q: "5. Inset pada peta berfungsi untuk menunjukkan lokasi daerah yang dipetakan terhadap wilayah lain yang lebih luas di sekitarnya.",
+        a: true,
+        p: "BENAR. Inset adalah peta kecil sisipan untuk memperjelas posisi geografis wilayah utama pada peta."
+    },
+    {
+        q: "6. Simbol titik pada peta umumnya digunakan untuk menggambarkan kenampakan seperti sungai, jalan raya, dan batas administrasi negara.",
+        a: false,
+        p: "SALAH. Sungai, jalan, dan batas wilayah digambarkan menggunakan simbol garis. Simbol titik digunakan untuk kota, gunung, pelabuhan, atau bandara."
+    },
+    {
+        q: "7. Dalam aturan tata warna peta (hipso-metrik), warna hijau tua menunjukkan wilayah dataran rendah dengan ketinggian 0–200 meter di atas permukaan laut.",
+        a: true,
+        p: "BENAR. Warna hijau melambangkan dataran rendah, kuning untuk dataran tinggi, dan cokelat untuk daerah pegunungan."
+    },
+    {
+        q: "8. Lettering (tata tulis) pada peta untuk kenampakan perairan seperti sungai dan danau ditulis dengan huruf tegak berwarna hitam.",
+        a: false,
+        p: "SALAH. Kenampakan hidrografi (perairan) ditulis dengan huruf miring (italic) berwarna biru."
+    },
+    {
+        q: "9. Garis astronomis yang membelah bumi menjadi bagian utara dan selatan secara horizontal disebut Garis Bujur (Meridian).",
+        a: false,
+        p: "SALAH. Garis horizontal yang membagi bumi menjadi Utara dan Selatan adalah Garis Lintang (Paralel). Garis Bujur membentang vertikal dari kutub ke kutub."
+    },
+    {
+        q: "10. Proyeksi peta Silinder (Mercator) paling tepat digunakan untuk memetakan wilayah yang berada di sekitar garis khatulistiwa seperti Indonesia.",
+        a: true,
+        p: "BENAR. Proyeksi silinder memiliki distorsi paling kecil di daerah ekuator/khatulistiwa dan membesar ke arah kutub."
+    },
+    {
+        q: "11. Proyeksi Azimuthal (Zenithal) sangat cocok digunakan untuk memetakan wilayah kutub utara dan kutub selatan.",
+        a: true,
+        p: "BENAR. Bidang proyeksi datar yang menyinggung kutub membuat distorsi di wilayah kutub sangat minimal."
+    },
+    {
+        q: "12. Syarat peta yang baik disebut 'Conform', artinya luas daerah yang digambarkan pada peta harus sebanding dengan luas sebenarnya di lapangan.",
+        a: false,
+        p: "SALAH. Syarat luas harus sama disebut Equivalent. Conform berarti bentuk wilayah pada peta harus sama dengan bentuk aslinya."
+    },
+    {
+        q: "13. Garis tepi (border) pada peta berfungsi untuk membatasi ruang peta dan menjadi tempat mencantumkan angka derajat lintang serta bujur.",
+        a: true,
+        p: "BENAR. Garis tepi sebaiknya dibuat rangkap dua agar rapi dan memuat koordinat astronomis."
+    },
+    {
+        q: "14. Peta Kadaster memiliki skala antara 1 : 100 sampai dengan 1 : 5.000 dan sering digunakan untuk peta sertifikat tanah.",
+        a: true,
+        p: "BENAR. Peta kadaster adalah peta berskala sangat besar untuk keperluan pertanahan dan perencanaan teknis detail."
+    },
+    {
+        q: "15. Semakin besar angka penyebut pada skala peta (misalnya 1 : 1.000.000 dibanding 1 : 10.000), maka informasi yang ditampilkan akan semakin detail.",
+        a: false,
+        p: "SALAH. Semakin besar angka penyebutnya, skalanya semakin kecil sehingga cakupan wilayahnya luas namun informasinya bersifat umum (tidak detail)."
+    },
+
+    // BAGIAN 2: MENGHITUNG SKALA PETA (16-30)
+    {
+        q: "16. Jika jarak kota A dan kota B pada peta berskala 1 : 500.000 adalah 4 cm, maka jarak sebenarnya kedua kota tersebut adalah 20 km.",
+        a: true,
+        p: "BENAR. Jarak Sebenarnya = 4 cm × 500.000 = 2.000.000 cm = 20 km."
+    },
+    {
+        q: "17. Jarak sebenarnya antara dua desa adalah 15 km. Jika digambar pada peta dengan jarak 3 cm, maka skala peta tersebut adalah 1 : 50.000.",
+        a: false,
+        p: "SALAH. Skala = 3 cm : 1.500.000 cm = 1 : 500.000 (bukan 1 : 50.000)."
+    },
+    {
+        q: "18. Sebuah peta berskala 1 : 250.000 diperbesar 2 kali lipat. Skala peta yang baru setelah diperbesar adalah 1 : 125.000.",
+        a: true,
